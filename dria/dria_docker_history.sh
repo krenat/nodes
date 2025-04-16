@@ -23,8 +23,8 @@ for ((i=START; i<=END; i++)); do
   echo -ne "🔄 Контейнер $CONTAINER: "
 
   if docker exec "$CONTAINER" test -f /root/.dria/bin/dkn-compute-launcher; then
-    OUTPUT=$(docker exec "$CONTAINER" /root/.dria/bin/dkn-compute-launcher points 2>/dev/null)
-    POINTS=$(echo "$OUTPUT" | grep -oP "\d+(?= \$DRIA)")
+    POINTS=$(docker exec -it "$CONTAINER" /root/.dria/bin/dkn-compute-launcher points 2>/dev/null \
+        | grep -oE '[0-9]+ \$DRIA' || echo "N/A")
 
     if [[ -n "$POINTS" ]]; then
       CURRENT_POINTS[$CONTAINER]=$POINTS
