@@ -10,7 +10,7 @@ START=${1:-0}
 END=${2:-9}
 DATE=$(date +%F)
 RANGE_LABEL="${START}-${END}"
-HISTORY_FILE="/home/твій_юзер/dria/dria_points_history.json"
+HISTORY_FILE="/home/root/dria/dria_points_history.json"
 mkdir -p "$(dirname "$HISTORY_FILE")"
 
 echo -e "${BLUE}📦 Збираємо DRIA points для діапазону ${RANGE_LABEL}${NC}"
