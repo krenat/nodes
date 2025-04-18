@@ -120,7 +120,7 @@ if [[ "$STAGE" == "3" ]]; then
 cat > .env <<EOF
 ## DRIA ##
 DKN_WALLET_SECRET_KEY=$WALLET_SECRET
-DKN_MODELS=gemini-1.5-flash,gemini-1.5-pro,gemini-2.0-flash
+DKN_MODELS=gemini-1.5-pro,gemini-2.0-flash,gemini-2.0-pro-exp-02-05
 DKN_P2P_LISTEN_ADDR=/ip4/0.0.0.0/tcp/4001
 DKN_RELAY_NODES=
 DKN_BOOTSTRAP_NODES=
@@ -154,5 +154,5 @@ EOF
   # Запуск tmux-сесії 'dria' і запуск dkn-compute-launcher всередині
   echo -e "${BLUE}Запускаємо tmux-сесію 'dria' з dkn-compute-launcher...${NC}"
   
-  docker exec -it "$CONTAINER_NAME" tmux new -s dria 
+  docker exec -it "$CONTAINER_NAME" tmux new -s dria '/root/.dria/bin/dkn-compute-launcher start; bash'
 fi
