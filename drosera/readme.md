@@ -1,0 +1,1 @@
+mkdir -p "$HOME/drosera" && wget --no-cache -q -O "$HOME/drosera/drosera.sh" "https://raw.githubusercontent.com/krenat/nodes/refs/heads/main/drosera/drosera.sh" && sudo chmod +x "$HOME/drosera/drosera.sh" && "$HOME/drosera/drosera.sh"
