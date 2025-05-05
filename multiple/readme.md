@@ -1,0 +1,1 @@
+mkdir -p "$HOME/multiple" && wget --no-cache -q -O "$HOME/multiple/multiple.sh" "https://raw.githubusercontent.com/krenat/nodes/refs/heads/main/multiple/multiple.sh" && sudo chmod +x "$HOME/multiple/multiple.sh" && "$HOME/multiple/multiple.sh"
