@@ -1,60 +1,50 @@
-#!/bin/bash
-
-HISTORY_FILE="/home/root/dria/analytics/dria_points_history.json"
-TODAY=$(date +%F)
-YESTERDAY=$(date -d "yesterday" +%F)
-
-GREEN='\033[0;32m'
+# Кольори
 RED='\033[0;31m'
-BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+PURPLE='\033[0;35m'
+GRAY='\033[0;37m'
 NC='\033[0m'
 
-if [ ! -f "$HISTORY_FILE" ]; then
-  echo "❌ Файл історії не знайдено: $HISTORY_FILE"
-  exit 1
-fi
+# Заголовок
+printf "%-8s" "Container"
+for DATE in "${DATES[@]}"; do
+  printf " | %6s" "$DATE"
+done
+echo
 
-# ==== Перевірка чи є дані ====
-jq -e --arg day "$TODAY" 'has($day)' "$HISTORY_FILE" > /dev/null || {
-  echo "❌ Немає записів за $TODAY"
-  exit 1
-}
+# Дані по контейнерах
+for i in $(seq "$START" "$END"); do
+  CONTAINER="dria$i"
+  printf "%-8s" "$CONTAINER"
+  PREV_VALUE=""
 
-jq -e --arg day "$YESTERDAY" 'has($day)' "$HISTORY_FILE" > /dev/null || {
-  echo "❌ Немає записів за $YESTERDAY"
-  exit 1
-}
+  for DATE in "${DATES[@]}"; do
+    VALUE=$(jq -r --arg d "$DATE" --arg c "$CONTAINER" '.[$d][$c] // empty' "$JSON_FILE")
 
-echo -e "${BLUE}📊 Порівняння DRIA Points: $YESTERDAY → $TODAY${NC}"
+    if [ -z "$VALUE" ] || [ "$VALUE" = "0" ]; then
+      printf " | ${GRAY}%6s${NC}" "---"
+      PREV_VALUE=""
+      continue
+    fi
 
-# ==== Порівняння по діапазонах ====
-jq -r --arg day1 "$YESTERDAY" --arg day2 "$TODAY" '
-  [$day1, $day2] as $days |
-  $days | map(. as $d | input[$d]) | transpose | .[0] as $yest | .[1] as $today |
-  input[$day2] as $today_data |
-  reduce keys_unsorted[] as $range (
-    "";
-    . + (
-      $today_data[$range] as $t |
-      input[$day1][$range] as $y |
-      (
-        $t | keys_unsorted[] | map({
-          container: .,
-          today: ($t[.]),
-          yesterday: ($y[.] // 0),
-          delta: ($t[.] - ($y[.] // 0))
-        })
-      )
-    )
-  )
-' --slurpfile input "$HISTORY_FILE" | jq -c '.[]' | while read -r entry; do
-  CONTAINER=$(echo "$entry" | jq -r '.container')
-  TODAY_P=$(echo "$entry" | jq -r '.today')
-  YESTERDAY_P=$(echo "$entry" | jq -r '.yesterday')
-  DELTA=$(echo "$entry" | jq -r '.delta')
+    COLOR=$NC
+    if [ -n "$PREV_VALUE" ]; then
+      DIFF=$((VALUE - PREV_VALUE))
+      if [ "$DIFF" -eq 0 ]; then
+        COLOR=$RED
+      elif [ "$DIFF" -lt 100 ]; then
+        COLOR=$YELLOW
+      elif [ "$DIFF" -le 250 ]; then
+        COLOR=$GREEN
+      else
+        COLOR=$PURPLE
+      fi
+    fi
 
-  COLOR=$([ "$DELTA" -ge 0 ] && echo "$GREEN" || echo "$RED")
-  SIGN=$([ "$DELTA" -ge 0 ] && echo "+" || echo "-")
+    printf " | ${COLOR}%6s${NC}" "$VALUE"
+    PREV_VALUE=$VALUE
+  done
 
-  echo -e "$CONTAINER: $YESTERDAY_P → $TODAY_P ${COLOR}(${SIGN}${DELTA})${NC}"
+  echo
 done
