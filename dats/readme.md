@@ -1,0 +1,2 @@
+### install 
+mkdir -p "$HOME/p-dats" && wget --no-cache -q -O "$HOME/p-dats/dats.sh" "https://raw.githubusercontent.com/krenat/nodes/refs/heads/main/dats/dats.sh" && sudo chmod +x "$HOME/p-dats/dats.sh" && "$HOME/p-dats/dats.sh"
