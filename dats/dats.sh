@@ -11,9 +11,13 @@ PROJECT_DIR="$HOME/p-dats"
 prepare() {
   packages=("docker:docker.io" "libasound:libasound2" "libgbm:libgbm1" "xauth:xauth")
 
+  echo -e "${BLUE}Встановлення залежностей...${NC}"
+
   TOTAL=${#packages[@]}
   CURRENT=0
   BAR_WIDTH=40
+
+  sudo apt update >/dev/null 2>&1
 
   draw_progress() {
     local progress=$1
@@ -37,14 +41,14 @@ prepare() {
 check_and_install() {
   if ! dpkg -s "$1" &> /dev/null; then
       echo "$1 не знайдено. Встановлюємо..."
-      sudo apt update
-      sudo apt install -y "$2"
+      sudo apt install -y "$2" >/dev/null 2>&1
   fi
 }
 
 download_and_install_dats() {
+  echo -e "${BLUE}Завантаження та сстановлення dats...${NC}"
   cd "$PROJECT_DIR"
-  wget --no-cache -q -O dats_install.deb https://dl.datsproject.io/evm-linux-deb
+  wget --show-progress -O dats_install.deb https://dl.datsproject.io/evm-linux-deb
   sudo apt install ./dats_install.deb
   cd
 }
