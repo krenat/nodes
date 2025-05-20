@@ -236,19 +236,19 @@ EOF
 
 collect_points() {
   # ==== Аргументи ====
-  if [[ -z "$1" ]]; then
+  if [[ -z "$2" ]]; then
     read -p "Введи початковий індекс контейнера (START): " START
   else
-    START=$1
+    START=$2
   fi
 
-  if [[ -z "$2" ]]; then
+  if [[ -z "$3" ]]; then
     read -p "Введи кінцевий індекс контейнера (END): " END
   else
-    END=$2
+    END=$3
   fi
 
-  SLEEP_MAX=${3:-90}
+  SLEEP_MAX=${4:-90}
 
   DATE=$(date +%F)
   RANGE_LABEL="${START}-${END}"
@@ -323,28 +323,28 @@ collect_points() {
     [[ $i -lt $END ]] && echo -n ", "
   done)"'}')
 
-  # ==== Запис у файл: .[date][range] = { partial json } ====
-  jq --arg date "$DATE" --arg range "$RANGE_LABEL" --argjson data "$PARTIAL_JSON" \
-     '.[$date] = (.[$date] // {}) | .[$date][$range] = $data' \
-     "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+  # ==== Запис у файл: .[date] = { partial json } ====
+   jq --arg date "$DATE" --argjson data "$PARTIAL_JSON" \
+      '.[$date] = (.[$date] // {}) + $data' \
+      "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
 
-  echo -e "${GREEN}✅ Дані збережено в історію: $DATE → [$RANGE_LABEL]${NC}"
+  echo -e "${GREEN}✅ Дані збережено в історію: $DATE ${NC}"
 }
 
 analyze_points() {
-  if [[ -z "$1" ]]; then
+  if [[ -z "$2" ]]; then
    read -p "Введи початковий індекс контейнера (START): " START
   else
-    START=$1
+    START=$2
   fi
 
-  if [[ -z "$2" ]]; then
+  if [[ -z "$3" ]]; then
     read -p "Введи кінцевий індекс контейнера (END): " END
   else
-    END=$2
+    END=$3
   fi
 
-  DAYS=${3:-5}
+  DAYS=${4:-5}
 
   # Отримати останні $DAYS днів у форматі yyyy-mm-dd
   JSON_FILE="$SCRIPT_DIR/dria_points_history.json"
