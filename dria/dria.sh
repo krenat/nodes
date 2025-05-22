@@ -185,7 +185,7 @@ setup_project() {
   WALLETS_FILE="$SCRIPT_DIR/dria_wallets.json"
 
   # Отримуємо дані з файлу dria_wallets
-  WALLET_SECRET=$(jq -r ".[] | select(.index == $INDEX) | .wallet" dria_wallets.json)
+  WALLET_SECRET=$(jq -r ".[] | select(.index == $INDEX) | .evm-private" dria_wallets.json)
   GEMINI_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .gemini-api" dria_wallets.json)
   SERPER_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .serper-api" dria_wallets.json)
   JINA_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .jina-api" dria_wallets.json)
