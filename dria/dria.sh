@@ -185,8 +185,11 @@ setup_project() {
   WALLETS_FILE="$SCRIPT_DIR/dria_wallets.json"
 
   # Отримуємо дані з файлу dria_wallets
-  WALLET_SECRET=$(jq -r ".[] | select(.index == $INDEX) | .wallet" "$WALLETS_FILE")
-  GEMINI_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .api" "$WALLETS_FILE")
+  WALLET_SECRET=$(jq -r ".[] | select(.index == $INDEX) | .wallet" dria_wallets.json)
+  GEMINI_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .gemini-api" dria_wallets.json)
+  SERPER_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .serper-api" dria_wallets.json)
+  JINA_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .jina-api" dria_wallets.json)
+  MODELS=$(jq -r ".[] | select(.index == $INDEX) | .models" dria_wallets.json)
 
   if [[ -z "$WALLET_SECRET" ]]; then
     echo -e "${RED}❌ Не знайдено wallet для індексу $INDEX${NC}"
@@ -199,7 +202,7 @@ setup_project() {
   cat > .env <<EOF
 ## DRIA ##
 DKN_WALLET_SECRET_KEY=$WALLET_SECRET
-DKN_MODELS=gemini-1.5-pro,gemini-2.0-flash,gemini-2.0-pro-exp-02-05
+DKN_MODELS=$MODELS
 DKN_P2P_LISTEN_ADDR=/ip4/0.0.0.0/tcp/4001
 DKN_RELAY_NODES=
 DKN_BOOTSTRAP_NODES=
@@ -217,9 +220,9 @@ GEMINI_API_KEY=$GEMINI_API_KEY
 ## Open Router (if used, required) ##
 OPENROUTER_API_KEY=
 ## Serper (optional) ##
-SERPER_API_KEY=
+SERPER_API_KEY=$SERPER_API_KEY
 ## Jina (optional) ##
-JINA_API_KEY=
+JINA_API_KEY=$JINA_API_KEY
 
 ## Log levels
 RUST_LOG=none
@@ -333,7 +336,7 @@ collect_points() {
     # Запит
     echo -ne "${BLUE}🔍 $CONTAINER:${NC} "
     POINTS=$(docker exec -it "$CONTAINER" /root/.dria/bin/dkn-compute-launcher points 2>/dev/null \
-      | grep -oE '[0-9]+ \$DRIA' | grep -oE '^[0-9]+' || echo 0)
+      | sed -r 's/\x1B\[[0-9;]*[mK]//g' | grep -oE '[0-9]+ \$DRIA' | grep -oE '^[0-9]+' || echo 0)
 
     echo "$POINTS $DRIA"
 

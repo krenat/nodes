@@ -1,7 +1,10 @@
 [
   {
     "index": 0,
-    "wallet": "some-private-key",
-    "api": "some-api-key-GEMINI"
-  }  
+    "wallet": "",
+    "gemini-api": "",
+    "serper-api": "",
+    "jina-api": "",
+    "models": "gemini-2.0-flash,gemini-2.5-pro-exp-03-25"
+  }
 ]
