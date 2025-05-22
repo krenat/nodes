@@ -109,8 +109,15 @@ start_project() {
   docker exec -it "$CONTAINER_NAME" tmux new -s pipe './pop; bash'
 }
 
+full_install() {
+  install
+  update_project
+  start_project
+}
+
 show_menu() {
 	echo "Оберіть етап для виконання:"
+	echo "fi - інсталювати, налаштувати та запустити проєкт"
 	echo "i - інсталювати проєкт"
 	echo "u - налаштувати проєкт"
 	echo "s - запустити проєкт"
@@ -125,6 +132,7 @@ handle_step() {
     i) install ;;
     u) update_project ;;
     s) start_project ;;
+    fi) full_install ;;
     x) exit ;;
     *) show_menu ;;
 	esac
