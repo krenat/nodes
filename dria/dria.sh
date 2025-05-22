@@ -10,6 +10,8 @@ PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TIME_FILE="$SCRIPT_DIR/last_run_time.txt"
+INTERVAL_SECONDS_DAY=$((24 * 60 * 60))
 
 prepare() {
   packages=("docker:docker.io")
@@ -234,6 +236,49 @@ EOF
   docker exec -it "$CONTAINER_NAME" tmux new -s dria '/root/.dria/bin/dkn-compute-launcher start; bash'
 }
 
+continue_collect_points() {
+  if [[ -z "$2" ]]; then
+    read -p "Введи початковий індекс контейнера (START): " START
+  else
+    START=$2
+  fi
+
+  if [[ -z "$3" ]]; then
+    read -p "Введи кінцевий індекс контейнера (END): " END
+  else
+    END=$3
+  fi
+
+  while true; do
+    CURRENT_TIME=$(date +%s)
+
+    if [[ -f "$TIME_FILE" ]]; then
+      LAST_RUN_TIME=$(cat "$TIME_FILE")
+    else
+      LAST_RUN_TIME=0
+    fi
+
+    ELAPSED=$((CURRENT_TIME - LAST_RUN_TIME))
+
+    if (( ELAPSED >= INTERVAL_SECONDS )); then
+        collect_points points "$START" "$END"
+        date +%s > "$TIME_FILE"
+    else
+      REMAINING=$((INTERVAL_SECONDS - ELAPSED))
+
+      if (( REMAINING >= 3600 )); then
+        HOURS=$((REMAINING / 3600))
+        echo "[$(date)] Waiting another ~$HOURS hour(s)..."
+      else
+        MINUTES=$((REMAINING / 60))
+        echo "[$(date)] Waiting another ~$MINUTES minute(s)..."
+      fi
+    fi
+
+    sleep 3600  # перевірка кожну годину
+  done
+}
+
 collect_points() {
   # ==== Аргументи ====
   if [[ -z "$2" ]]; then
@@ -431,7 +476,8 @@ show_menu() {
 	echo "i1 - cтворити контейнер"
 	echo "i2 - інсталювати проєкт"
 	echo "i3 - налаштувати проєкт"
-	echo "points - збір та відображення поінтів"
+	echo "points - збір та відображення поінтів разове"
+	echo "points-c - збір та відображення поінтів постійно"
 	echo "analyze - аналіз та відображення поінтів"
 	echo "x - завершити"
 
@@ -447,6 +493,7 @@ handle_step() {
     i2) install_2 ;;
     i3) install_3 ;;
     points) collect_points "$@" ;;
+    points-c) continue_collect_points "$@" ;;
     analyze) analyze_points "$@" ;;
     x) exit ;;
     *) show_menu ;;
