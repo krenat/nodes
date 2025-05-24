@@ -10,8 +10,6 @@ PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TIME_FILE="$SCRIPT_DIR/last_run_time.txt"
-INTERVAL_SECONDS_DAY=$((24 * 60 * 60))
 
 prepare() {
   packages=("docker:docker.io")
@@ -182,14 +180,13 @@ setup_project() {
   CONTAINER_NAME="$1"
   INDEX="$2"
 
-  WALLETS_FILE="$SCRIPT_DIR/dria_wallets.json"
+  WALLET_JSON=$(jq -r ".[] | select(.index == $INDEX)" "$WALLETS_FILE")
 
-  # Отримуємо дані з файлу dria_wallets
-  WALLET_SECRET=$(jq -r ".[] | select(.index == $INDEX) | .evm-private" dria_wallets.json)
-  GEMINI_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .gemini-api" dria_wallets.json)
-  SERPER_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .serper-api" dria_wallets.json)
-  JINA_API_KEY=$(jq -r ".[] | select(.index == $INDEX) | .jina-api" dria_wallets.json)
-  MODELS=$(jq -r ".[] | select(.index == $INDEX) | .models" dria_wallets.json)
+  WALLET_SECRET=$(echo "$WALLET_JSON" | jq -r ".evm-private")
+  GEMINI_API_KEY=$(echo "$WALLET_JSON" | jq -r ".gemini-api")
+  SERPER_API_KEY=$(echo "$WALLET_JSON" | jq -r ".serper-api")
+  JINA_API_KEY=$(echo "$WALLET_JSON" | jq -r ".jina-api")
+  MODELS=$(echo "$WALLET_JSON" | jq -r ".models")
 
   if [[ -z "$WALLET_SECRET" ]]; then
     echo -e "${RED}❌ Не знайдено wallet для індексу $INDEX${NC}"
@@ -240,6 +237,9 @@ EOF
 }
 
 continue_collect_points() {
+  TIME_FILE="$SCRIPT_DIR/last_run_time.txt"
+  INTERVAL_SECONDS_DAY=$((24 * 60 * 60))
+
   if [[ -z "$2" ]]; then
     read -p "Введи початковий індекс контейнера (START): " START
   else
@@ -263,11 +263,11 @@ continue_collect_points() {
 
     ELAPSED=$((CURRENT_TIME - LAST_RUN_TIME))
 
-    if (( ELAPSED >= INTERVAL_SECONDS )); then
+    if (( ELAPSED >= INTERVAL_SECONDS_DAY )); then
         collect_points points "$START" "$END"
         date +%s > "$TIME_FILE"
     else
-      REMAINING=$((INTERVAL_SECONDS - ELAPSED))
+      REMAINING=$((INTERVAL_SECONDS_DAY - ELAPSED))
 
       if (( REMAINING >= 3600 )); then
         HOURS=$((REMAINING / 3600))
