@@ -236,6 +236,44 @@ EOF
   docker exec -it "$CONTAINER_NAME" tmux new -s dria '/root/.dria/bin/dkn-compute-launcher start; bash'
 }
 
+restart() {
+  if [[ -z "$2" ]]; then
+    read -p "Введи початковий індекс контейнера (START): " START
+  else
+    START=$2
+  fi
+
+  if [[ -z "$3" ]]; then
+    read -p "Введи кінцевий індекс контейнера (END): " END
+  else
+    END=$3
+  fi
+
+  for i in $(seq "$START" "$END"); do
+    CONTAINER="dria$i"
+    echo -e "\n🔄 ${CONTAINER}: перезапуск tmux-сесії..."
+
+    # Зупиняємо сесію tmux, якщо вона існує
+    docker exec "$CONTAINER" bash -c '
+      if tmux has-session -t dria 2>/dev/null; then
+        echo "🛑 Зупиняємо стару сесію tmux dria..."
+        tmux kill-session -t dria
+      else
+        echo "ℹ️  Стара сесія tmux dria не знайдена"
+      fi
+    '
+
+    # Стартуємо нову сесію
+    docker exec -d "$CONTAINER" bash -c '
+      echo "🚀 Запускаємо нову tmux-сесію dria..."
+      tmux new -s dria "/root/.dria/bin/dkn-compute-launcher start; bash"
+    '
+
+    echo "✅ $CONTAINER — Готово"
+  done
+
+}
+
 continue_collect_points() {
   TIME_FILE="$SCRIPT_DIR/last_run_time.txt"
   INTERVAL_SECONDS_DAY=$((24 * 60 * 60))
@@ -482,6 +520,7 @@ show_menu() {
 	echo "points - збір та відображення поінтів разове"
 	echo "points-c - збір та відображення поінтів постійно"
 	echo "analyze - аналіз та відображення поінтів"
+	echo "r - перезапустити"
 	echo "x - завершити"
 
 	read -r -p "Ваш вибір: " step
@@ -498,6 +537,7 @@ handle_step() {
     points) collect_points "$@" ;;
     points-c) continue_collect_points "$@" ;;
     analyze) analyze_points "$@" ;;
+    r) restart "$@";;
     x) exit ;;
     *) show_menu ;;
 	esac
