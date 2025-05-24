@@ -180,12 +180,13 @@ setup_project() {
   CONTAINER_NAME="$1"
   INDEX="$2"
 
+  WALLETS_FILE="$SCRIPT_DIR/dria_wallets.json"
   WALLET_JSON=$(jq -r ".[] | select(.index == $INDEX)" "$WALLETS_FILE")
 
-  WALLET_SECRET=$(echo "$WALLET_JSON" | jq -r ".evm-private")
-  GEMINI_API_KEY=$(echo "$WALLET_JSON" | jq -r ".gemini-api")
-  SERPER_API_KEY=$(echo "$WALLET_JSON" | jq -r ".serper-api")
-  JINA_API_KEY=$(echo "$WALLET_JSON" | jq -r ".jina-api")
+  WALLET_SECRET=$(echo "$WALLET_JSON" | jq -r ".evm_private")
+  GEMINI_API_KEY=$(echo "$WALLET_JSON" | jq -r ".gemini_api")
+  SERPER_API_KEY=$(echo "$WALLET_JSON" | jq -r ".serper_api")
+  JINA_API_KEY=$(echo "$WALLET_JSON" | jq -r ".jina_api")
   MODELS=$(echo "$WALLET_JSON" | jq -r ".models")
 
   if [[ -z "$WALLET_SECRET" ]]; then
@@ -262,9 +263,9 @@ restart() {
         echo "ℹ️  Стара сесія tmux dria не знайдена"
       fi
     '
-
+    sleep 5
     # Стартуємо нову сесію
-    docker exec -d "$CONTAINER" bash -c '
+    docker exec -dit "$CONTAINER" bash -c '
       echo "🚀 Запускаємо нову tmux-сесію dria..."
       tmux new -s dria "/root/.dria/bin/dkn-compute-launcher start; bash"
     '

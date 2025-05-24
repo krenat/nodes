@@ -1,10 +1,10 @@
 [
   {
     "index": 0,
-    "evm-private": "",
-    "gemini-api": "",
-    "serper-api": "",
-    "jina-api": "",
+    "evm_private": "",
+    "gemini_api": "",
+    "serper_api": "",
+    "jina_api": "",
     "models": "gemini-2.0-flash,gemini-2.5-pro-exp-03-25"
   }
 ]
