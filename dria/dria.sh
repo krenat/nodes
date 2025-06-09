@@ -277,6 +277,7 @@ restart() {
 
 continue_collect_points() {
   TIME_FILE="$SCRIPT_DIR/last_run_time.txt"
+  : > TIME_FILE
   INTERVAL_SECONDS_DAY=$((24 * 60 * 60))
 
   if [[ -z "$2" ]]; then
@@ -303,8 +304,8 @@ continue_collect_points() {
     ELAPSED=$((CURRENT_TIME - LAST_RUN_TIME))
 
     if (( ELAPSED >= INTERVAL_SECONDS_DAY )); then
-        collect_points points "$START" "$END"
         date +%s > "$TIME_FILE"
+        collect_points points "$START" "$END"
     else
       REMAINING=$((INTERVAL_SECONDS_DAY - ELAPSED))
 
@@ -511,6 +512,17 @@ analyze_points() {
   done
 }
 
+show_logs() {
+  if [[ -z "$2" ]]; then
+    read -p "Введи індекс контейнера: " INDEX
+  else
+    INDEX=$2
+  fi
+  CONTAINER_NAME="dria$INDEX"
+
+  docker exec -it "$CONTAINER_NAME" tmux attach -t dria
+}
+
 show_menu() {
 	echo "Оберіть етап для виконання:"
 	echo "p - інсталювати необхідні залежності"
@@ -521,6 +533,7 @@ show_menu() {
 	echo "points - збір та відображення поінтів разове"
 	echo "points-c - збір та відображення поінтів постійно"
 	echo "analyze - аналіз та відображення поінтів"
+	echo "l - показати логи"
 	echo "r - перезапустити"
 	echo "x - завершити"
 
@@ -538,6 +551,7 @@ handle_step() {
     points) collect_points "$@" ;;
     points-c) continue_collect_points "$@" ;;
     analyze) analyze_points "$@" ;;
+    l) show_logs "$@" ;;
     r) restart "$@";;
     x) exit ;;
     *) show_menu ;;
