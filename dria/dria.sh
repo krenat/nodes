@@ -11,6 +11,48 @@ NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+CMD_ARGS=()
+
+get_arg() {
+  local key="$1"
+  local value=""
+  for arg in "${CMD_ARGS[@]}"; do
+      case "$arg" in
+        -$key=*)
+          value="${arg#*=}"
+          break
+          ;;
+      esac
+    done
+  echo "$value"
+}
+
+get_arg_or_prompt() {
+  local key="$1"
+  local prompt="$2"
+  local value=""
+  value=$(get_arg "$key")
+
+  if [[ -z "$value" ]]; then
+    read -p "$prompt: " value
+  fi
+
+  echo "$value"
+}
+
+get_arg_or_default() {
+  local key="$1"
+  local default="$2"
+  local value=""
+  value=$(get_arg "$key")
+
+  if [[ -z "$value" ]]; then
+    value="$default"
+  fi
+
+  echo "$value"
+}
+
 prepare() {
   packages=("docker:docker.io")
 
@@ -238,17 +280,11 @@ EOF
 }
 
 restart() {
-  if [[ -z "$2" ]]; then
-    read -p "Введи початковий індекс контейнера (START): " START
-  else
-    START=$2
-  fi
+  local START
+  local END
 
-  if [[ -z "$3" ]]; then
-    read -p "Введи кінцевий індекс контейнера (END): " END
-  else
-    END=$3
-  fi
+  START=$(get_arg_or_prompt "start" "Введіть значення для start:")
+  END=$(get_arg_or_prompt "end" "Введіть значення для end:")
 
   for i in $(seq "$START" "$END"); do
     CONTAINER="dria$i"
@@ -276,21 +312,15 @@ restart() {
 }
 
 continue_collect_points() {
+  local START
+  local END
+
+  START=$(get_arg_or_prompt "start" "Введіть значення для start:")
+  END=$(get_arg_or_prompt "end" "Введіть значення для end:")
+
   TIME_FILE="$SCRIPT_DIR/last_run_time.txt"
-  : > TIME_FILE
+  : > "$TIME_FILE"
   INTERVAL_SECONDS_DAY=$((24 * 60 * 60))
-
-  if [[ -z "$2" ]]; then
-    read -p "Введи початковий індекс контейнера (START): " START
-  else
-    START=$2
-  fi
-
-  if [[ -z "$3" ]]; then
-    read -p "Введи кінцевий індекс контейнера (END): " END
-  else
-    END=$3
-  fi
 
   while true; do
     CURRENT_TIME=$(date +%s)
@@ -324,19 +354,14 @@ continue_collect_points() {
 
 collect_points() {
   # ==== Аргументи ====
-  if [[ -z "$2" ]]; then
-    read -p "Введи початковий індекс контейнера (START): " START
-  else
-    START=$2
-  fi
+  local START
+  local END
 
-  if [[ -z "$3" ]]; then
-    read -p "Введи кінцевий індекс контейнера (END): " END
-  else
-    END=$3
-  fi
+  START=$(get_arg_or_prompt "start" "Введіть значення для start:")
+  END=$(get_arg_or_prompt "end" "Введіть значення для end:")
 
-  SLEEP_MAX=${4:-90}
+  local SLEEP_MAX
+  SLEEP_MAX=$(get_arg_or_default "sleep" "90")
 
   DATE=$(date +%F)
   RANGE_LABEL="${START}-${END}"
@@ -420,19 +445,14 @@ collect_points() {
 }
 
 analyze_points() {
-  if [[ -z "$2" ]]; then
-   read -p "Введи початковий індекс контейнера (START): " START
-  else
-    START=$2
-  fi
+  local START
+  local END
 
-  if [[ -z "$3" ]]; then
-    read -p "Введи кінцевий індекс контейнера (END): " END
-  else
-    END=$3
-  fi
+  START=$(get_arg_or_prompt "start" "Введіть значення для start:")
+  END=$(get_arg_or_prompt "end" "Введіть значення для end:")
 
-  DAYS=${4:-5}
+  local DAYS
+  DAYS=$(get_arg_or_default "days" "5")
 
   # Отримати останні $DAYS днів у форматі yyyy-mm-dd
   JSON_FILE="$SCRIPT_DIR/dria_points_history.json"
@@ -513,11 +533,9 @@ analyze_points() {
 }
 
 show_logs() {
-  if [[ -z "$2" ]]; then
-    read -p "Введи індекс контейнера: " INDEX
-  else
-    INDEX=$2
-  fi
+  local INDEX
+  INDEX=$(get_arg_or_prompt "index" "Введіть значення для index:")
+
   CONTAINER_NAME="dria$INDEX"
 
   docker exec -it "$CONTAINER_NAME" tmux attach -t dria
@@ -542,17 +560,23 @@ show_menu() {
 }
 
 handle_step() {
-	case "$1" in
+  # Перший аргумент — це команда
+  local cmd="$1"
+  shift
+
+  CMD_ARGS=("$@")
+
+	case "$cmd" in
 	  p) prepare ;;
     i) install ;;
     i1) install_1 ;;
     i2) install_2 ;;
     i3) install_3 ;;
-    points) collect_points "$@" ;;
-    points-c) continue_collect_points "$@" ;;
-    analyze) analyze_points "$@" ;;
-    l) show_logs "$@" ;;
-    r) restart "$@";;
+    points) collect_points;;
+    points-c) continue_collect_points ;;
+    analyze) analyze_points ;;
+    l) show_logs  ;;
+    r) restart ;;
     x) exit ;;
     *) show_menu ;;
 	esac
